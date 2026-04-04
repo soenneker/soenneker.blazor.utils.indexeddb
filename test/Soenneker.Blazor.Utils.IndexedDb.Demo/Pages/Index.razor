@@ -7,238 +7,137 @@
 
 <PageTitle>IndexedDb Demo</PageTitle>
 
-<div class="showcase-page">
-    <section class="hero-card">
-        <div class="hero-copy">
-            <span class="eyebrow">Soenneker.Blazor.Utils.IndexedDb</span>
-            <h1>Professional IndexedDB access for Blazor apps</h1>
-            <p class="hero-lead">
-                This demo showcases the library as a production-ready browser persistence layer with typed serialization,
-                store provisioning, CRUD operations, and live inspection of the current object store.
-            </p>
+<Div Space="Space.Y.Is6">
+    <DemoPanel Title="Database" Description="Provisioned store and sample metadata.">
+        <Div Display="Display.Flex" Flex="Flex.Wrap" Gap="Gap.Is4">
+            <Div>
+                <Paragraph Margin="Margin.Is0" TextSize="TextSize.Sm" TextColor="TextColor.MutedForeground">Status</Paragraph>
+                <Paragraph Margin="Margin.Is0">@(IsReady ? "Ready" : "Initializing")</Paragraph>
+            </Div>
+            <Div>
+                <Paragraph Margin="Margin.Is0" TextSize="TextSize.Sm" TextColor="TextColor.MutedForeground">Database</Paragraph>
+                <Paragraph Margin="Margin.Is0" FontWeight="FontWeight.Semibold">@DatabaseName</Paragraph>
+            </Div>
+            <Div>
+                <Paragraph Margin="Margin.Is0" TextSize="TextSize.Sm" TextColor="TextColor.MutedForeground">Store</Paragraph>
+                <Paragraph Margin="Margin.Is0" FontWeight="FontWeight.Semibold">@StoreName</Paragraph>
+            </Div>
+            <Div>
+                <Paragraph Margin="Margin.Is0" TextSize="TextSize.Sm" TextColor="TextColor.MutedForeground">Entries</Paragraph>
+                <Paragraph Margin="Margin.Is0" FontWeight="FontWeight.Semibold">@_entryCount</Paragraph>
+            </Div>
+        </Div>
+        <DemoButtonRow>
+            <Button OnClick="ResetSampleAsync" Disabled="@_busy">Reset sample</Button>
+            <Button OnClick="RefreshSnapshotAsync" Variant="ButtonVariant.Outline" Disabled="@_busy">Refresh snapshot</Button>
+        </DemoButtonRow>
+    </DemoPanel>
 
-            <div class="hero-actions">
-                <button class="btn btn-primary btn-lg" @onclick="ResetSampleAsync" disabled="@_busy">Reset sample data</button>
-                <button class="btn btn-outline-light btn-lg" @onclick="RefreshSnapshotAsync" disabled="@_busy">Refresh snapshot</button>
-            </div>
-        </div>
+    <Grid Columns="Columns.Is1.OnLg.Is2" Gap="Gap.Is4">
+        <DemoPanel Title="Playground" Description="Typed DashboardPreference CRUD.">
+            <Field>
+                <FieldLabel For="idb-key">Record key</FieldLabel>
+                <FieldBody>
+                    <Input Id="idb-key" @bind-Value="_recordKey" />
+                </FieldBody>
+            </Field>
+            <Field>
+                <FieldLabel For="idb-theme">Theme</FieldLabel>
+                <FieldBody>
+                    <Select Id="idb-theme" TValue="string" @bind-SelectedValue="_draft.Theme">
+                        <SelectItem TValue="string" ItemValue="@("System")" Text="System" />
+                        <SelectItem TValue="string" ItemValue="@("Light")" Text="Light" />
+                        <SelectItem TValue="string" ItemValue="@("Dark")" Text="Dark" />
+                    </Select>
+                </FieldBody>
+            </Field>
+            <Field>
+                <FieldLabel For="idb-pagesize">Page size</FieldLabel>
+                <FieldBody>
+                    <Input Id="idb-pagesize" Type="number" Min="10" Max="100" Step="5" @bind-Value="_pageSizeText" />
+                </FieldBody>
+            </Field>
+            <Field>
+                <FieldLabel For="idb-compact">Compact mode</FieldLabel>
+                <FieldBody>
+                    <InputCheckbox @bind-Value="_draft.CompactMode" Id="idb-compact" />
+                </FieldBody>
+            </Field>
+            <Field>
+                <FieldLabel For="idb-insights">Show insights</FieldLabel>
+                <FieldBody>
+                    <InputCheckbox @bind-Value="_draft.ShowInsights" Id="idb-insights" />
+                </FieldBody>
+            </Field>
+            <DemoButtonRow>
+                <Button OnClick="SavePreferenceAsync" Disabled="@_busy">Save</Button>
+                <Button OnClick="LoadPreferenceAsync" Variant="ButtonVariant.Secondary" Disabled="@_busy">Load</Button>
+                <Button OnClick="RemovePreferenceAsync" Variant="ButtonVariant.Outline" Disabled="@_busy">Remove</Button>
+                <Button OnClick="ClearStoreAsync" Variant="ButtonVariant.Destructive" Disabled="@_busy">Clear store</Button>
+            </DemoButtonRow>
+            <Paragraph Margin="Margin.Is0" TextSize="TextSize.Sm">
+                <Strong>@_statusTitle</Strong> — @_statusMessage
+            </Paragraph>
+        </DemoPanel>
 
-        <div class="hero-panel">
-            <div class="status-pill @(IsReady ? "is-ready" : "is-pending")">
-                <span class="status-dot"></span>
-                @(IsReady ? "Ready" : "Initializing")
-            </div>
-
-            <dl class="metric-grid">
-                <div class="metric-card">
-                    <dt>Database</dt>
-                    <dd>@DatabaseName</dd>
-                </div>
-                <div class="metric-card">
-                    <dt>Store</dt>
-                    <dd>@StoreName</dd>
-                </div>
-                <div class="metric-card">
-                    <dt>Entries</dt>
-                    <dd>@_entryCount</dd>
-                </div>
-                <div class="metric-card">
-                    <dt>Active key</dt>
-                    <dd>@_recordKey</dd>
-                </div>
-            </dl>
-
-            <div class="code-sample">
-<pre><code>await indexedDb.Initialize();
-await indexedDb.EnsureStore("@DatabaseName", "@StoreName");
-await indexedDb.Set("@DatabaseName", "@StoreName", key, payload);
-var item = await indexedDb.Get&lt;DashboardPreference&gt;("@DatabaseName", "@StoreName", key);</code></pre>
-            </div>
-        </div>
-    </section>
-
-    <section class="feature-grid">
-        <article class="feature-card">
-            <h2>Typed object storage</h2>
-            <p>Use `Set&lt;T&gt;()` and `Get&lt;T&gt;()` to persist structured models with JSON serialization handled in the utility layer.</p>
-        </article>
-        <article class="feature-card">
-            <h2>Safe store provisioning</h2>
-            <p>`EnsureStore()` creates the backing object store when needed, so consumers can provision browser storage explicitly.</p>
-        </article>
-        <article class="feature-card">
-            <h2>Store introspection</h2>
-            <p>The demo also exercises `GetKeys()`, `GetLength()`, `ContainsKey()`, `Remove()`, and `Clear()` for operational visibility.</p>
-        </article>
-    </section>
-
-    <section class="workspace-grid">
-        <article class="panel-card">
-            <div class="panel-header">
-                <div>
-                    <span class="panel-label">Live playground</span>
-                    <h2>Save a dashboard preference</h2>
-                </div>
-                <span class="text-badge">Typed demo model</span>
-            </div>
-
-            <div class="form-grid">
-                <div>
-                    <label class="form-label" for="record-key">Record key</label>
-                    <input id="record-key" class="form-control form-control-lg" @bind="_recordKey" />
-                </div>
-
-                <div>
-                    <label class="form-label" for="theme">Theme</label>
-                    <select id="theme" class="form-select form-select-lg" @bind="_draft.Theme">
-                        <option value="System">System</option>
-                        <option value="Light">Light</option>
-                        <option value="Dark">Dark</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label class="form-label" for="page-size">Page size</label>
-                    <input id="page-size" type="number" min="10" max="100" step="5" class="form-control form-control-lg" @bind="_draft.PageSize" />
-                </div>
-
-                <div class="checkbox-row">
-                    <label class="form-check">
-                        <input class="form-check-input" type="checkbox" @bind="_draft.CompactMode" />
-                        <span class="form-check-label">Compact mode</span>
-                    </label>
-                    <label class="form-check">
-                        <input class="form-check-input" type="checkbox" @bind="_draft.ShowInsights" />
-                        <span class="form-check-label">Show insights</span>
-                    </label>
-                </div>
-            </div>
-
-            <div class="action-row">
-                <button class="btn btn-primary" @onclick="SavePreferenceAsync" disabled="@_busy">Save</button>
-                <button class="btn btn-outline-secondary" @onclick="LoadPreferenceAsync" disabled="@_busy">Load</button>
-                <button class="btn btn-outline-danger" @onclick="RemovePreferenceAsync" disabled="@_busy">Remove</button>
-                <button class="btn btn-outline-light" @onclick="ClearStoreAsync" disabled="@_busy">Clear store</button>
-            </div>
-
-            <div class="feedback-banner @(_lastActionSucceeded ? "feedback-success" : "feedback-neutral")">
-                <strong>@_statusTitle</strong>
-                <span>@_statusMessage</span>
-            </div>
-        </article>
-
-        <article class="panel-card">
-            <div class="panel-header">
-                <div>
-                    <span class="panel-label">Current object</span>
-                    <h2>Loaded preference</h2>
-                </div>
-                <span class="text-badge">From IndexedDB</span>
-            </div>
-
+        <DemoPanel Title="Loaded record" Description="Deserialized preference and raw JSON.">
             @if (_loadedPreference is null)
             {
-                <div class="empty-state">
-                    <p>No record loaded yet. Save or load a record to inspect the deserialized object.</p>
-                </div>
+                <Paragraph Margin="Margin.Is0" TextSize="TextSize.Sm" TextColor="TextColor.MutedForeground">No record loaded.</Paragraph>
             }
             else
             {
-                <div class="loaded-grid">
-                    <div class="loaded-item">
-                        <span>Theme</span>
-                        <strong>@_loadedPreference.Theme</strong>
-                    </div>
-                    <div class="loaded-item">
-                        <span>Page size</span>
-                        <strong>@_loadedPreference.PageSize</strong>
-                    </div>
-                    <div class="loaded-item">
-                        <span>Compact mode</span>
-                        <strong>@(_loadedPreference.CompactMode ? "Enabled" : "Disabled")</strong>
-                    </div>
-                    <div class="loaded-item">
-                        <span>Insights</span>
-                        <strong>@(_loadedPreference.ShowInsights ? "Visible" : "Hidden")</strong>
-                    </div>
-                </div>
-
-                <div class="json-view">
-                    <pre>@_loadedPreferenceJson</pre>
-                </div>
+                <Div Space="Space.Y.Is2">
+                    <Paragraph Margin="Margin.Is0" TextSize="TextSize.Sm">Theme: <Strong>@_loadedPreference.Theme</Strong></Paragraph>
+                    <Paragraph Margin="Margin.Is0" TextSize="TextSize.Sm">Page size: <Strong>@_loadedPreference.PageSize</Strong></Paragraph>
+                    <Paragraph Margin="Margin.Is0" TextSize="TextSize.Sm">Compact: <Strong>@(_loadedPreference.CompactMode ? "Yes" : "No")</Strong></Paragraph>
+                    <Paragraph Margin="Margin.Is0" TextSize="TextSize.Sm">Insights: <Strong>@(_loadedPreference.ShowInsights ? "Yes" : "No")</Strong></Paragraph>
+                </Div>
+                @if (!string.IsNullOrEmpty(_loadedPreferenceJson))
+                {
+                    <PreCode Class="demo-pre" Highlight="false">@_loadedPreferenceJson</PreCode>
+                }
             }
-        </article>
-    </section>
+        </DemoPanel>
+    </Grid>
 
-    <section class="workspace-grid">
-        <article class="panel-card">
-            <div class="panel-header">
-                <div>
-                    <span class="panel-label">Store snapshot</span>
-                    <h2>Operational metadata</h2>
-                </div>
-                <span class="text-badge">`ContainsKey`, `GetKeys`, `GetLength`</span>
-            </div>
+    <Grid Columns="Columns.Is1.OnLg.Is2" Gap="Gap.Is4">
+        <DemoPanel Title="Store snapshot" Description="Keys, counts, and contains checks.">
+            <Paragraph Margin="Margin.Is0" TextSize="TextSize.Sm">Contains active key: <Strong>@(_containsCurrentKey ? "true" : "false")</Strong></Paragraph>
+            <Paragraph Margin="Margin.Is0" TextSize="TextSize.Sm">Total entries: <Strong>@_entryCount</Strong></Paragraph>
+            <DemoButtonRow>
+                <Button OnClick="RefreshSnapshotAsync" Variant="ButtonVariant.Outline" Size="ButtonSize.Sm" Disabled="@_busy">Refresh keys</Button>
+            </DemoButtonRow>
+            @if (_keys.Count == 0)
+            {
+                <Paragraph Margin="Margin.Is0" TextSize="TextSize.Sm" TextColor="TextColor.MutedForeground">Store is empty.</Paragraph>
+            }
+            else
+            {
+                <Div Space="Space.Y.Is2">
+                    @foreach (string key in _keys)
+                    {
+                        <Paragraph Margin="Margin.Is0" TextSize="TextSize.Sm">
+                            @key
+                            @if (key == _recordKey)
+                            {
+                                <Span TextSize="TextSize.Xs" TextColor="TextColor.MutedForeground"> (active)</Span>
+                            }
+                        </Paragraph>
+                    }
+                </Div>
+            }
+        </DemoPanel>
 
-            <div class="snapshot-grid">
-                <div class="snapshot-card">
-                    <span>Contains active key</span>
-                    <strong>@(_containsCurrentKey ? "True" : "False")</strong>
-                </div>
-                <div class="snapshot-card">
-                    <span>Total entries</span>
-                    <strong>@_entryCount</strong>
-                </div>
-            </div>
-
-            <div class="keys-list">
-                <div class="keys-header">
-                    <h3>Keys in store</h3>
-                    <button class="btn btn-sm btn-outline-light" @onclick="RefreshSnapshotAsync" disabled="@_busy">Refresh</button>
-                </div>
-
-                @if (_keys.Count == 0)
-                {
-                    <div class="empty-state">
-                        <p>The store is currently empty.</p>
-                    </div>
-                }
-                else
-                {
-                    <ul>
-                        @foreach (string key in _keys)
-                        {
-                            <li>
-                                <span>@key</span>
-                                @if (key == _recordKey)
-                                {
-                                    <span class="list-badge">Active</span>
-                                }
-                            </li>
-                        }
-                    </ul>
-                }
-            </div>
-        </article>
-
-        <article class="panel-card">
-            <div class="panel-header">
-                <div>
-                    <span class="panel-label">Integration summary</span>
-                    <h2>How the demo uses the library</h2>
-                </div>
-                <span class="text-badge">Blazor + IndexedDB</span>
-            </div>
-
-            <ol class="summary-list">
-                <li>The page initializes the library and provisions a named store.</li>
-                <li>Form values are persisted as a typed `DashboardPreference` object.</li>
-                <li>Reads are deserialized through `Get&lt;T&gt;()` and rendered back into the UI.</li>
-                <li>Store metadata is refreshed using key enumeration and count APIs.</li>
-            </ol>
-        </article>
-    </section>
-</div>
+        <DemoPanel Title="Flow" Description="How this page uses the utility.">
+            <Div Space="Space.Y.Is2">
+                <Paragraph Margin="Margin.Is0" TextSize="TextSize.Sm">1. Initialize and ensure the object store exists.</Paragraph>
+                <Paragraph Margin="Margin.Is0" TextSize="TextSize.Sm">2. Persist a typed model with Set&lt;T&gt;.</Paragraph>
+                <Paragraph Margin="Margin.Is0" TextSize="TextSize.Sm">3. Read back with Get&lt;T&gt; and refresh metadata.</Paragraph>
+            </Div>
+        </DemoPanel>
+    </Grid>
+</Div>
 
 @code {
     private const string DatabaseName = "soenneker-indexeddb-demo";
@@ -261,7 +160,8 @@ var item = await indexedDb.Get&lt;DashboardPreference&gt;("@DatabaseName", "@Sto
     private bool _containsCurrentKey;
     private bool _busy = true;
     private bool _ready;
-    private bool _lastActionSucceeded = true;
+
+    private string _pageSizeText = "25";
 
     private bool IsReady => _ready && !_busy;
 
@@ -287,11 +187,15 @@ var item = await indexedDb.Get&lt;DashboardPreference&gt;("@DatabaseName", "@Sto
             await RefreshSnapshotInternalAsync(loadCurrentRecord: true);
         });
 
-        StateHasChanged();
+        _pageSizeText = _draft.PageSize.ToString();
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task SavePreferenceAsync()
     {
+        if (int.TryParse(_pageSizeText, out int ps))
+            _draft.PageSize = Math.Clamp(ps, 10, 100);
+
         await RunBusyActionAsync("Saved preference", $"Stored '{_recordKey}' in IndexedDB.", async () =>
         {
             await IndexedDb.Set(DatabaseName, StoreName, _recordKey, _draft);
@@ -335,6 +239,7 @@ var item = await indexedDb.Get&lt;DashboardPreference&gt;("@DatabaseName", "@Sto
         {
             _draft = DashboardPreference.CreateDefault();
             _recordKey = "jake";
+            _pageSizeText = _draft.PageSize.ToString();
 
             await IndexedDb.DeleteDatabase(DatabaseName);
             await IndexedDb.EnsureStore(DatabaseName, StoreName);
@@ -367,12 +272,13 @@ var item = await indexedDb.Get&lt;DashboardPreference&gt;("@DatabaseName", "@Sto
         _loadedPreferenceJson = _loadedPreference is null
             ? ""
             : JsonSerializer.Serialize(_loadedPreference, _jsonOptions);
+        if (_loadedPreference != null)
+            _pageSizeText = _loadedPreference.PageSize.ToString();
     }
 
     private async Task RunBusyActionAsync(string successTitle, string successMessage, Func<Task> action)
     {
         _busy = true;
-        _lastActionSucceeded = true;
 
         try
         {
@@ -382,7 +288,6 @@ var item = await indexedDb.Get&lt;DashboardPreference&gt;("@DatabaseName", "@Sto
         }
         catch (Exception ex)
         {
-            _lastActionSucceeded = false;
             _statusTitle = "Action failed";
             _statusMessage = ex.Message;
         }
