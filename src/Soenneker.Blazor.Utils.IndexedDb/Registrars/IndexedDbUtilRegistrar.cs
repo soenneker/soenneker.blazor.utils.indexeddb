@@ -1,7 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Soenneker.Blazor.Utils.IndexedDb.Abstract;
-using Soenneker.Blazor.Utils.ResourceLoader.Registrars;
+using Soenneker.Blazor.Utils.ModuleImport.Registrars;
 
 namespace Soenneker.Blazor.Utils.IndexedDb.Registrars;
 
@@ -15,7 +15,7 @@ public static class IndexedDbUtilRegistrar
     /// </summary>
     public static IServiceCollection AddIndexedDbUtilAsScoped(this IServiceCollection services)
     {
-        services.AddResourceLoaderAsScoped()
+        services.AddModuleImportUtilAsScoped()
                 .TryAddScoped<IIndexedDbInterop, IndexedDbInterop>();
 
         services.TryAddScoped<IIndexedDbUtil, IndexedDbUtil>();

@@ -2,8 +2,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.JSInterop;
-using Soenneker.Asyncs.Initializers;
-using Soenneker.Blazor.Utils.ResourceLoader.Abstract;
+using Soenneker.Blazor.Utils.ModuleImport.Abstract;
 using Soenneker.Extensions.CancellationTokens;
 using Soenneker.Utils.CancellationScopes;
 using Soenneker.Blazor.Utils.IndexedDb.Abstract;
@@ -14,46 +13,14 @@ namespace Soenneker.Blazor.Utils.IndexedDb;
 /// <inheritdoc cref="IIndexedDbInterop"/>
 public sealed class IndexedDbInterop : IIndexedDbInterop
 {
-    private const string _modulePath = "Soenneker.Blazor.Utils.IndexedDb/js/indexeddbinterop.js";
-    private const string _jsInitialize = "IndexedDbInterop.initialize";
-    private const string _jsEnsureStore = "IndexedDbInterop.ensureStore";
-    private const string _jsGet = "IndexedDbInterop.get";
-    private const string _jsGetAll = "IndexedDbInterop.getAll";
-    private const string _jsSet = "IndexedDbInterop.set";
-    private const string _jsRemove = "IndexedDbInterop.remove";
-    private const string _jsClear = "IndexedDbInterop.clear";
-    private const string _jsContainsKey = "IndexedDbInterop.containsKey";
-    private const string _jsGetKeys = "IndexedDbInterop.getKeys";
-    private const string _jsGetLength = "IndexedDbInterop.getLength";
-    private const string _jsDeleteDatabase = "IndexedDbInterop.deleteDatabase";
+    private const string _modulePath = "/_content/Soenneker.Blazor.Utils.IndexedDb/js/indexeddbinterop.js";
 
-    private readonly IJSRuntime _jsRuntime;
-    private readonly IResourceLoader _resourceLoader;
-    private readonly AsyncInitializer _initializer;
+    private readonly IModuleImportUtil _moduleImportUtil;
     private readonly CancellationScope _cancellationScope = new();
 
-    private bool _disposed;
-
-    public IndexedDbInterop(IJSRuntime jsRuntime, IResourceLoader resourceLoader)
+    public IndexedDbInterop(IModuleImportUtil moduleImportUtil)
     {
-        _jsRuntime = jsRuntime;
-        _resourceLoader = resourceLoader;
-        _initializer = new AsyncInitializer(InitializeModule);
-    }
-
-    private async ValueTask InitializeModule(CancellationToken cancellationToken)
-    {
-        _ = await _resourceLoader.ImportModule(_modulePath, cancellationToken);
-    }
-
-    private async ValueTask EnsureInitialized(CancellationToken cancellationToken)
-    {
-        CancellationToken linked = _cancellationScope.CancellationToken.Link(cancellationToken, out CancellationTokenSource? source);
-
-        using (source)
-        {
-            await _initializer.Init(linked);
-        }
+        _moduleImportUtil = moduleImportUtil;
     }
 
     public async ValueTask Initialize(CancellationToken cancellationToken = default)
@@ -62,8 +29,8 @@ public sealed class IndexedDbInterop : IIndexedDbInterop
 
         using (source)
         {
-            await EnsureInitialized(linked);
-            await _jsRuntime.InvokeVoidAsync(_jsInitialize, linked);
+            IJSObjectReference module = await _moduleImportUtil.GetContentModuleReference(_modulePath, linked);
+            await module.InvokeVoidAsync("initialize", linked);
         }
     }
 
@@ -76,8 +43,8 @@ public sealed class IndexedDbInterop : IIndexedDbInterop
 
         using (source)
         {
-            await EnsureInitialized(linked);
-            await _jsRuntime.InvokeVoidAsync(_jsEnsureStore, linked, databaseName, storeName);
+            IJSObjectReference module = await _moduleImportUtil.GetContentModuleReference(_modulePath, linked);
+            await module.InvokeVoidAsync("ensureStore", linked, databaseName, storeName);
         }
     }
 
@@ -90,8 +57,8 @@ public sealed class IndexedDbInterop : IIndexedDbInterop
 
         using (source)
         {
-            await EnsureInitialized(linked);
-            return await _jsRuntime.InvokeAsync<string?>(_jsGet, linked, databaseName, storeName, key);
+            IJSObjectReference module = await _moduleImportUtil.GetContentModuleReference(_modulePath, linked);
+            return await module.InvokeAsync<string?>("get", linked, databaseName, storeName, key);
         }
     }
 
@@ -104,8 +71,8 @@ public sealed class IndexedDbInterop : IIndexedDbInterop
 
         using (source)
         {
-            await EnsureInitialized(linked);
-            var values = await _jsRuntime.InvokeAsync<List<string>>(_jsGetAll, linked, databaseName, storeName);
+            IJSObjectReference module = await _moduleImportUtil.GetContentModuleReference(_modulePath, linked);
+            var values = await module.InvokeAsync<List<string>>("getAll", linked, databaseName, storeName);
             return values ?? [];
         }
     }
@@ -119,8 +86,8 @@ public sealed class IndexedDbInterop : IIndexedDbInterop
 
         using (source)
         {
-            await EnsureInitialized(linked);
-            await _jsRuntime.InvokeVoidAsync(_jsSet, linked, databaseName, storeName, key, value ?? "");
+            IJSObjectReference module = await _moduleImportUtil.GetContentModuleReference(_modulePath, linked);
+            await module.InvokeVoidAsync("set", linked, databaseName, storeName, key, value ?? "");
         }
     }
 
@@ -133,8 +100,8 @@ public sealed class IndexedDbInterop : IIndexedDbInterop
 
         using (source)
         {
-            await EnsureInitialized(linked);
-            await _jsRuntime.InvokeVoidAsync(_jsRemove, linked, databaseName, storeName, key);
+            IJSObjectReference module = await _moduleImportUtil.GetContentModuleReference(_modulePath, linked);
+            await module.InvokeVoidAsync("remove", linked, databaseName, storeName, key);
         }
     }
 
@@ -147,8 +114,8 @@ public sealed class IndexedDbInterop : IIndexedDbInterop
 
         using (source)
         {
-            await EnsureInitialized(linked);
-            await _jsRuntime.InvokeVoidAsync(_jsClear, linked, databaseName, storeName);
+            IJSObjectReference module = await _moduleImportUtil.GetContentModuleReference(_modulePath, linked);
+            await module.InvokeVoidAsync("clear", linked, databaseName, storeName);
         }
     }
 
@@ -161,8 +128,8 @@ public sealed class IndexedDbInterop : IIndexedDbInterop
 
         using (source)
         {
-            await EnsureInitialized(linked);
-            return await _jsRuntime.InvokeAsync<bool>(_jsContainsKey, linked, databaseName, storeName, key);
+            IJSObjectReference module = await _moduleImportUtil.GetContentModuleReference(_modulePath, linked);
+            return await module.InvokeAsync<bool>("containsKey", linked, databaseName, storeName, key);
         }
     }
 
@@ -175,8 +142,8 @@ public sealed class IndexedDbInterop : IIndexedDbInterop
 
         using (source)
         {
-            await EnsureInitialized(linked);
-            var keys = await _jsRuntime.InvokeAsync<List<string>>(_jsGetKeys, linked, databaseName, storeName);
+            IJSObjectReference module = await _moduleImportUtil.GetContentModuleReference(_modulePath, linked);
+            var keys = await module.InvokeAsync<List<string>>("getKeys", linked, databaseName, storeName);
             return keys ?? [];
         }
     }
@@ -190,8 +157,8 @@ public sealed class IndexedDbInterop : IIndexedDbInterop
 
         using (source)
         {
-            await EnsureInitialized(linked);
-            return await _jsRuntime.InvokeAsync<int>(_jsGetLength, linked, databaseName, storeName);
+            IJSObjectReference module = await _moduleImportUtil.GetContentModuleReference(_modulePath, linked);
+            return await module.InvokeAsync<int>("getLength", linked, databaseName, storeName);
         }
     }
 
@@ -204,20 +171,14 @@ public sealed class IndexedDbInterop : IIndexedDbInterop
 
         using (source)
         {
-            await EnsureInitialized(linked);
-            await _jsRuntime.InvokeVoidAsync(_jsDeleteDatabase, linked, databaseName);
+            IJSObjectReference module = await _moduleImportUtil.GetContentModuleReference(_modulePath, linked);
+            await module.InvokeVoidAsync("deleteDatabase", linked, databaseName);
         }
     }
 
     public async ValueTask DisposeAsync()
     {
-        if (_disposed)
-            return;
-
-        _disposed = true;
-
-        await _resourceLoader.DisposeModule(_modulePath);
-        await _initializer.DisposeAsync();
+        await _moduleImportUtil.DisposeContentModule(_modulePath);
         await _cancellationScope.DisposeAsync();
     }
 }
