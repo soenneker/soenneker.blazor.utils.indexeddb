@@ -9,7 +9,7 @@
 
 <Div Space="Space.Y.Is6">
     <DemoPanel Title="Database" Description="Provisioned store and sample metadata.">
-        <Div Display="Display.Flex" Flex="Flex.Wrap" Gap="Gap.Is4">
+        <Div Display="Display.Flex" Flex=@("flex-wrap") Gap="Gap.Is4">
             <Div>
                 <Paragraph Margin="Margin.Is0" TextSize="TextSize.Sm" TextColor="TextColor.MutedForeground">Status</Paragraph>
                 <Paragraph Margin="Margin.Is0">@(IsReady ? "Ready" : "Initializing")</Paragraph>

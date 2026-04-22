@@ -1,20 +1,19 @@
 using Soenneker.Blazor.Utils.IndexedDb.Abstract;
-using Soenneker.Tests.FixturedUnit;
-using Xunit;
+using Soenneker.Tests.HostedUnit;
 
 namespace Soenneker.Blazor.Utils.IndexedDb.Tests;
 
-[Collection("Collection")]
-public sealed class IndexedDbUtilTests : FixturedUnitTest
+[ClassDataSource<Host>(Shared = SharedType.PerTestSession)]
+public sealed class IndexedDbUtilTests : HostedUnitTest
 {
     private readonly IIndexedDbUtil _blazorlibrary;
 
-    public IndexedDbUtilTests(Fixture fixture, ITestOutputHelper output) : base(fixture, output)
+    public IndexedDbUtilTests(Host host) : base(host)
     {
         _blazorlibrary = Resolve<IIndexedDbUtil>(true);
     }
 
-    [Fact]
+    [Test]
     public void Default()
     {
 
