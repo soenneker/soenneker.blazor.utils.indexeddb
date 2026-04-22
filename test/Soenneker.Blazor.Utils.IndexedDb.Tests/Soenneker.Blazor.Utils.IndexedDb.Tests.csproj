@@ -26,10 +26,5 @@
     <ItemGroup>
         <ProjectReference Include="..\..\src\Soenneker.Blazor.Utils.IndexedDb\Soenneker.Blazor.Utils.IndexedDb.csproj" />
     </ItemGroup>
-
-    <ItemGroup>
-        <Content Include="testconfig.json">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </Content>
-    </ItemGroup>
 </Project>
+
