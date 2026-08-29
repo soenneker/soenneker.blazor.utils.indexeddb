@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,7 +21,7 @@ public sealed class IndexedDbInterop : IIndexedDbInterop
 
     public IndexedDbInterop(IModuleImportUtil moduleImportUtil)
     {
-        _moduleImportUtil = moduleImportUtil;
+        _moduleImportUtil = moduleImportUtil ?? throw new ArgumentNullException(nameof(moduleImportUtil));
     }
 
     public async ValueTask Initialize(CancellationToken cancellationToken = default)
@@ -182,7 +183,7 @@ public sealed class IndexedDbInterop : IIndexedDbInterop
     /// <returns>A task that represents the asynchronous operation.</returns>
     public async ValueTask DisposeAsync()
     {
-        await _moduleImportUtil.DisposeContentModule(_modulePath);
         await _cancellationScope.DisposeAsync();
+        await _moduleImportUtil.DisposeContentModule(_modulePath);
     }
 }

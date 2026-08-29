@@ -1,20 +1,10 @@
 let indexedDbInterop;
+const upgradeQueues = new Map();
 
 function validateName(value, parameterName) {
     if (typeof value !== "string" || value.trim().length === 0) {
         throw new Error(`IndexedDbInterop '${parameterName}' cannot be null, empty, or whitespace.`);
     }
-}
-
-async function getDatabaseVersion(databaseName) {
-    if (typeof indexedDB.databases !== "function") {
-        return null;
-    }
-
-    const databases = await indexedDB.databases();
-    const match = databases.find(database => database.name === databaseName);
-
-    return match?.version ?? null;
 }
 
 function openDatabase(databaseName, version = undefined, onUpgradeNeeded = undefined) {
@@ -36,7 +26,6 @@ function openDatabase(databaseName, version = undefined, onUpgradeNeeded = undef
         };
 
         request.onerror = () => reject(request.error ?? new Error(`Failed opening IndexedDB database '${databaseName}'.`));
-        request.onblocked = () => reject(new Error(`Opening IndexedDB database '${databaseName}' was blocked.`));
     });
 }
 
@@ -61,22 +50,48 @@ function deleteIndexedDb(databaseName) {
 
         request.onsuccess = () => resolve();
         request.onerror = () => reject(request.error ?? new Error(`Failed deleting IndexedDB database '${databaseName}'.`));
-        request.onblocked = () => reject(new Error(`Deleting IndexedDB database '${databaseName}' was blocked.`));
     });
 }
 
-async function openStoreDatabase(databaseName, storeName, createIfMissing) {
-    const version = await getDatabaseVersion(databaseName);
+async function enqueueUpgrade(databaseName, operation) {
+    const previous = upgradeQueues.get(databaseName) ?? Promise.resolve();
+    const current = previous.catch(() => undefined).then(operation);
+    upgradeQueues.set(databaseName, current);
 
-    if (version == null) {
-        if (createIfMissing) {
-            await indexedDbInterop.ensureStore(databaseName, storeName);
-            return openDatabase(databaseName);
+    try {
+        return await current;
+    } finally {
+        if (upgradeQueues.get(databaseName) === current) {
+            upgradeQueues.delete(databaseName);
         }
+    }
+}
 
-        return null;
+async function ensureStoreCore(databaseName, storeName) {
+    const database = await openDatabase(databaseName, undefined, db => {
+        if (!db.objectStoreNames.contains(storeName)) {
+            db.createObjectStore(storeName);
+        }
+    });
+
+    if (database.objectStoreNames.contains(storeName)) {
+        database.close();
+        return;
     }
 
+    const nextVersion = database.version + 1;
+    database.close();
+
+    const upgraded = await openDatabase(databaseName, nextVersion, db => {
+        if (!db.objectStoreNames.contains(storeName)) {
+            db.createObjectStore(storeName);
+        }
+    });
+
+    upgraded.close();
+}
+
+async function openStoreDatabase(databaseName, storeName, createIfMissing) {
     const database = await openDatabase(databaseName);
 
     if (database.objectStoreNames.contains(storeName)) {
@@ -101,35 +116,7 @@ indexedDbInterop = {
         validateName(databaseName, "databaseName");
         validateName(storeName, "storeName");
 
-        const version = await getDatabaseVersion(databaseName);
-
-        if (version == null) {
-            const database = await openDatabase(databaseName, 1, db => {
-                if (!db.objectStoreNames.contains(storeName)) {
-                    db.createObjectStore(storeName);
-                }
-            });
-
-            database.close();
-            return;
-        }
-
-        const database = await openDatabase(databaseName);
-
-        if (database.objectStoreNames.contains(storeName)) {
-            database.close();
-            return;
-        }
-
-        database.close();
-
-        const upgraded = await openDatabase(databaseName, version + 1, db => {
-            if (!db.objectStoreNames.contains(storeName)) {
-                db.createObjectStore(storeName);
-            }
-        });
-
-        upgraded.close();
+        await enqueueUpgrade(databaseName, () => ensureStoreCore(databaseName, storeName));
     },
 
     async get(databaseName, storeName, key) {
@@ -185,8 +172,6 @@ indexedDbInterop = {
         validateName(databaseName, "databaseName");
         validateName(storeName, "storeName");
         validateName(key, "key");
-
-        await indexedDbInterop.ensureStore(databaseName, storeName);
 
         const database = await openStoreDatabase(databaseName, storeName, true);
 
@@ -249,8 +234,19 @@ indexedDbInterop = {
         validateName(storeName, "storeName");
         validateName(key, "key");
 
-        const value = await indexedDbInterop.get(databaseName, storeName, key);
-        return value != null;
+        const database = await openStoreDatabase(databaseName, storeName, false);
+
+        if (database == null) {
+            return false;
+        }
+
+        try {
+            const transaction = database.transaction(storeName, "readonly");
+            const store = transaction.objectStore(storeName);
+            return await requestToPromise(store.count(key)) > 0;
+        } finally {
+            database.close();
+        }
     },
 
     async getKeys(databaseName, storeName) {
@@ -296,13 +292,7 @@ indexedDbInterop = {
     async deleteDatabase(databaseName) {
         validateName(databaseName, "databaseName");
 
-        const version = await getDatabaseVersion(databaseName);
-
-        if (version == null) {
-            return;
-        }
-
-        await deleteIndexedDb(databaseName);
+        await enqueueUpgrade(databaseName, () => deleteIndexedDb(databaseName));
     }
 };
 

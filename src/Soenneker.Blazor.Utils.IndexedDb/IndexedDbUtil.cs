@@ -16,7 +16,7 @@ public sealed class IndexedDbUtil : IIndexedDbUtil
     private readonly IIndexedDbInterop _interop;
     public IndexedDbUtil(IIndexedDbInterop interop)
     {
-        _interop = interop;
+        _interop = interop ?? throw new ArgumentNullException(nameof(interop));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -98,11 +98,12 @@ public sealed class IndexedDbUtil : IIndexedDbUtil
     public ValueTask Set<T>(string databaseName, string storeName, string key, T value, CancellationToken cancellationToken = default)
     {
         ValidateDatabaseStoreAndKey(databaseName, storeName, key);
+        ArgumentNullException.ThrowIfNull(value);
 
         if (value is string stringValue)
             return _interop.Set(databaseName, storeName, key, stringValue, cancellationToken);
 
-        string? json = JsonUtil.Serialize(value);
+        string json = JsonUtil.Serialize(value) ?? throw new InvalidOperationException("The value could not be serialized to JSON.");
         return _interop.Set(databaseName, storeName, key, json, cancellationToken);
     }
 

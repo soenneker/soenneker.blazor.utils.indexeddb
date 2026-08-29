@@ -65,6 +65,7 @@ public interface IIndexedDbUtil
     /// <param name="value">Value to serialize and store under the specified key.</param>
     /// <param name="cancellationToken">Token used to cancel the operation.</param>
     /// <returns>A task that completes when the set operation is complete.</returns>
+    /// <exception cref="System.ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
     ValueTask Set(string databaseName, string storeName, string key, string value, CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -77,6 +78,7 @@ public interface IIndexedDbUtil
     /// <param name="value">Value to serialize and store under the specified key.</param>
     /// <param name="cancellationToken">Token used to cancel the operation.</param>
     /// <returns>A task that completes when the set operation is complete.</returns>
+    /// <exception cref="System.ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
     ValueTask Set<T>(string databaseName, string storeName, string key, T value, CancellationToken cancellationToken = default);
 
     /// <summary>
