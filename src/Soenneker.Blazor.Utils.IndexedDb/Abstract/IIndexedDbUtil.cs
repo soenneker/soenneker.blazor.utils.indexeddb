@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization.Metadata;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -44,7 +45,8 @@ public interface IIndexedDbUtil
     /// <param name="key">Key used to locate the target entry.</param>
     /// <param name="cancellationToken">Token used to cancel the operation.</param>
     /// <returns>A task whose result is the value returned by get.</returns>
-    ValueTask<T?> Get<T>(string databaseName, string storeName, string key, CancellationToken cancellationToken = default);
+    /// <param name="typeInfo">Source-generated JSON metadata and serialization options for the value.</param>
+    ValueTask<T?> Get<T>(string databaseName, string storeName, string key, JsonTypeInfo<T> typeInfo, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Returns all JSON-serialized values from the specified object store.
@@ -54,7 +56,8 @@ public interface IIndexedDbUtil
     /// <param name="storeName">Name of the target object store.</param>
     /// <param name="cancellationToken">Token used to cancel the operation.</param>
     /// <returns>A task whose result is the collection returned by get All.</returns>
-    ValueTask<IReadOnlyList<T>> GetAll<T>(string databaseName, string storeName, CancellationToken cancellationToken = default);
+    /// <param name="typeInfo">Source-generated JSON metadata and serialization options for the value.</param>
+    ValueTask<IReadOnlyList<T>> GetAll<T>(string databaseName, string storeName, JsonTypeInfo<T> typeInfo, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Sets a string value for the specified key.
@@ -79,7 +82,8 @@ public interface IIndexedDbUtil
     /// <param name="cancellationToken">Token used to cancel the operation.</param>
     /// <returns>A task that completes when the set operation is complete.</returns>
     /// <exception cref="System.ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
-    ValueTask Set<T>(string databaseName, string storeName, string key, T value, CancellationToken cancellationToken = default);
+    /// <param name="typeInfo">Source-generated JSON metadata and serialization options for the value.</param>
+    ValueTask Set<T>(string databaseName, string storeName, string key, T value, JsonTypeInfo<T> typeInfo, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Removes a stored value by key.

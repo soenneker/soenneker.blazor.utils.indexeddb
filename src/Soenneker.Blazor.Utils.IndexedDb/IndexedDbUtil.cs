@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization.Metadata;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -39,7 +40,7 @@ public sealed class IndexedDbUtil : IIndexedDbUtil
         return _interop.Get(databaseName, storeName, key, cancellationToken);
     }
 
-    public async ValueTask<T?> Get<T>(string databaseName, string storeName, string key, CancellationToken cancellationToken = default)
+    public async ValueTask<T?> Get<T>(string databaseName, string storeName, string key, JsonTypeInfo<T> typeInfo, CancellationToken cancellationToken = default)
     {
         ValidateDatabaseStoreAndKey(databaseName, storeName, key);
 
@@ -54,10 +55,10 @@ public sealed class IndexedDbUtil : IIndexedDbUtil
         if (value.IsNullOrWhiteSpace())
             return default;
 
-        return JsonUtil.Deserialize<T>(value);
+        return JsonUtil.Deserialize<T>(value, typeInfo);
     }
 
-    public async ValueTask<IReadOnlyList<T>> GetAll<T>(string databaseName, string storeName, CancellationToken cancellationToken = default)
+    public async ValueTask<IReadOnlyList<T>> GetAll<T>(string databaseName, string storeName, JsonTypeInfo<T> typeInfo, CancellationToken cancellationToken = default)
     {
         ValidateName(databaseName, nameof(databaseName));
         ValidateName(storeName, nameof(storeName));
@@ -78,7 +79,7 @@ public sealed class IndexedDbUtil : IIndexedDbUtil
             if (string.IsNullOrWhiteSpace(value))
                 continue;
 
-            T? item = JsonUtil.Deserialize<T>(value);
+            T? item = JsonUtil.Deserialize<T>(value, typeInfo);
 
             if (item is not null)
                 result.Add(item);
@@ -95,7 +96,7 @@ public sealed class IndexedDbUtil : IIndexedDbUtil
         return _interop.Set(databaseName, storeName, key, value, cancellationToken);
     }
 
-    public ValueTask Set<T>(string databaseName, string storeName, string key, T value, CancellationToken cancellationToken = default)
+    public ValueTask Set<T>(string databaseName, string storeName, string key, T value, JsonTypeInfo<T> typeInfo, CancellationToken cancellationToken = default)
     {
         ValidateDatabaseStoreAndKey(databaseName, storeName, key);
         ArgumentNullException.ThrowIfNull(value);
@@ -103,7 +104,7 @@ public sealed class IndexedDbUtil : IIndexedDbUtil
         if (value is string stringValue)
             return _interop.Set(databaseName, storeName, key, stringValue, cancellationToken);
 
-        string json = JsonUtil.Serialize(value) ?? throw new InvalidOperationException("The value could not be serialized to JSON.");
+        string json = JsonUtil.Serialize(value, typeInfo) ?? throw new InvalidOperationException("The value could not be serialized to JSON.");
         return _interop.Set(databaseName, storeName, key, json, cancellationToken);
     }
 
