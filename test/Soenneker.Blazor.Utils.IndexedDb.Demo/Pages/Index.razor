@@ -143,11 +143,6 @@
     private const string DatabaseName = "soenneker-indexeddb-demo";
     private const string StoreName = "dashboard-preferences";
 
-    private static readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web)
-    {
-        WriteIndented = true
-    };
-
     private readonly List<string> _keys = [];
 
     private DashboardPreference _draft = DashboardPreference.CreateDefault();
@@ -181,7 +176,7 @@
 
             if (!hasSeed)
             {
-                await IndexedDb.Set(DatabaseName, StoreName, _recordKey, _draft);
+                await IndexedDb.Set(DatabaseName, StoreName, _recordKey, _draft, DemoJsonContext.Default.DashboardPreference);
             }
 
             await RefreshSnapshotInternalAsync(loadCurrentRecord: true);
@@ -198,7 +193,7 @@
 
         await RunBusyActionAsync("Saved preference", $"Stored '{_recordKey}' in IndexedDB.", async () =>
         {
-            await IndexedDb.Set(DatabaseName, StoreName, _recordKey, _draft);
+            await IndexedDb.Set(DatabaseName, StoreName, _recordKey, _draft, DemoJsonContext.Default.DashboardPreference);
             await RefreshSnapshotInternalAsync(loadCurrentRecord: true);
         });
     }
@@ -243,7 +238,7 @@
 
             await IndexedDb.DeleteDatabase(DatabaseName);
             await IndexedDb.EnsureStore(DatabaseName, StoreName);
-            await IndexedDb.Set(DatabaseName, StoreName, _recordKey, _draft);
+            await IndexedDb.Set(DatabaseName, StoreName, _recordKey, _draft, DemoJsonContext.Default.DashboardPreference);
 
             await RefreshSnapshotInternalAsync(loadCurrentRecord: true);
         });
@@ -268,10 +263,10 @@
         if (!loadCurrentRecord)
             return;
 
-        _loadedPreference = await IndexedDb.Get<DashboardPreference>(DatabaseName, StoreName, _recordKey);
+        _loadedPreference = await IndexedDb.Get(DatabaseName, StoreName, _recordKey, DemoJsonContext.Default.DashboardPreference);
         _loadedPreferenceJson = _loadedPreference is null
             ? ""
-            : JsonSerializer.Serialize(_loadedPreference, _jsonOptions);
+            : JsonSerializer.Serialize(_loadedPreference, DemoJsonContext.Default.DashboardPreference);
         if (_loadedPreference != null)
             _pageSizeText = _loadedPreference.PageSize.ToString();
     }
