@@ -3,7 +3,7 @@
 [&_svg:not([class*='size-'])]:size-3.5
 [&_svg[data-slot=icon]]:size-3.5
 bg-primary
-border-b
+border
 border-border
 flex
 font-medium
@@ -20,11 +20,10 @@ inline-flex
 leading-normal
 lg:grid-cols-2
 m-0
-pb-4
+p-4
+p-6
+px-2
 px-2.5
-px-4
-py-2
-py-6
 rounded-[min(var(--radius-md),12px)]
 rounded-lg
 space-y-1
