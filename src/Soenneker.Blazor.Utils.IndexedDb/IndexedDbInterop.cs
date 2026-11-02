@@ -14,7 +14,7 @@ namespace Soenneker.Blazor.Utils.IndexedDb;
 /// <inheritdoc cref="IIndexedDbInterop"/>
 public sealed class IndexedDbInterop : IIndexedDbInterop
 {
-    private const string _modulePath = "_content/Soenneker.Blazor.Utils.IndexedDb/js/indexeddbinterop.js";
+    private const string _modulePath = "_content/Soenneker.Blazor.Utils.IndexedDb/js/indexeddbinterop.min.js";
 
     private readonly IModuleImportUtil _moduleImportUtil;
     private readonly CancellationScope _cancellationScope = new();
